@@ -242,6 +242,7 @@ void Shoot(int r)
         lcd.setCursor(1,1);
         lcd.print("WUMPUS SLAIN!!!");
         delay(3000);
+        PlayAgain();
         //wins++;
     }
     else
@@ -254,9 +255,9 @@ void Shoot(int r)
         int newWumpRoom = random(3);
         int oldWumpusRoom = findWumpus();
         newWumpRoom = rooms[oldWumpusRoom].neighbors[newWumpRoom];
-        
-        rooms[newWumpRoom].wumpus = 1; //put wumpus in new room
+
         rooms[oldWumpusRoom].wumpus = 0; //remove wumpus from old room
+        rooms[newWumpRoom].wumpus = 1; //put wumpus in new room
         
         if (newWumpRoom == currentRoom)
         {
