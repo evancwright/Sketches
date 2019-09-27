@@ -2,6 +2,8 @@
 #include <LiquidCrystal.h>
 #include <LCDKeypad.h>
 
+#define UNUSED_ANALOG_PIN 7
+
 byte c_arrow[8] = {
   B00000,
   B00000,
@@ -39,21 +41,26 @@ class Room
 Room rooms[21];
 int currentRoom  = 1;
 
+
+
 void setup() {
- // Serial.begin(9600);
- // randomSeed(analogRead(0));
+  Serial.begin(9600);
+  randomSeed(analogRead(UNUSED_ANALOG_PIN));
   
-  lcd.createChar(1,c_arrow);
+ // lcd.createChar(1,c_arrow);
   lcd.begin(16, 2);
   // put your setup code here, to run once:
   SetupCaves();
   PlaceHazards();
+  
 }
 
 void loop() {
+  
   // put your main code here, to run repeatedly:
   PrintRoom();
   delay(100);
+  
   lcd.setCursor(0,1);
   lcd.print("L=Move R=Shoot"); 
   
@@ -63,7 +70,7 @@ void loop() {
     buttonPressed=waitButton();
   }
   while(!(buttonPressed==KEYPAD_LEFT || buttonPressed==KEYPAD_RIGHT));
-
+  
   int ms = buttonPressed;
   //ask the player for the room
   print((char*)"Which room?");
@@ -115,7 +122,7 @@ void SetupCaves()
         SetNeighbors(14, 4, 13, 15);
         SetNeighbors(15, 6, 14, 16);
         SetNeighbors(16, 15, 17, 20);
-        SetNeighbors(17, 7, 18, 19);
+        SetNeighbors(17,7,16,18);
         SetNeighbors(18, 9, 17, 19);
         SetNeighbors(19, 11, 18, 20);
         SetNeighbors(20, 13, 16, 19);  
@@ -123,7 +130,7 @@ void SetupCaves()
 
 void ClearCaves()
 {
-  for (int i=0; i <= 21; i++) rooms[i].Reset();
+  for (int i=0; i < 21; i++) rooms[i].Reset();
 }
 
 void PlaceHazards()
@@ -194,8 +201,9 @@ void Move(int newRoom)
         }
         
         delay(1000);
-        lcd.setCursor(2,1);
-        lcd.print("***PIT***");
+        lcd.setCursor(4,1);
+        lcd.print("*THUD*");
+        delay(1000);
         //losses++;
         PlayAgain();
     }
@@ -228,8 +236,11 @@ void Shoot(int r)
         lcd.clear();
         lcd.print("Thwack!");
         delay(1000);
-        lcd.setCursor(2,1);
-        lcd.print("VICTORY!");
+        lcd.setCursor(8,0);
+        lcd.print("Thud!");
+        delay(1000);
+        lcd.setCursor(1,1);
+        lcd.print("WUMPUS SLAIN!!!");
         delay(3000);
         //wins++;
     }
@@ -238,14 +249,40 @@ void Shoot(int r)
         lcd.clear();
         lcd.setCursor(2,0);
         lcd.print((char*)"YOU MISSED!");
-        //Console.WriteLine("Before you can retrieve it, the enraged Wumpus devours you whole.");
-        lcd.setCursor(1,1);
-        lcd.print((char*)"***YOU HAVE DIED***");
-        delay(1000);
+
+        //pick a random neighbor
+        int newWumpRoom = random(3);
+        int oldWumpusRoom = findWumpus();
+        newWumpRoom = rooms[oldWumpusRoom].neighbors[newWumpRoom];
+        
+        rooms[newWumpRoom].wumpus = 1; //put wumpus in new room
+        rooms[oldWumpusRoom].wumpus = 0; //remove wumpus from old room
+        
+        if (newWumpRoom == currentRoom)
+        {
+          lcd.clear();
+          lcd.print("*GROWL*");
+          delay(1000);
+          lcd.setCursor(4,1);
+          lcd.print("*GULP*");
+          delay(1000);
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print((char*)"YOU'VE HAVE DIED");
+          delay(2000);
+          PlayAgain();
+        }
+        else
+        {
+          lcd.setCursor(0,1);
+          lcd.print((char*)"WUMPUS HAS MOVED");
+          delay(2000);
+        }
+        
         //losses++;
     }
 
-    PlayAgain();
+
 }
 
 void PrintRoom()
@@ -322,4 +359,15 @@ void print(char *msg)
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print(msg);
+}
+
+//returns the room the wumpus is in
+int findWumpus()
+{
+  for (int i=0; i < 21; i++)
+  {
+    if (rooms[i].wumpus == 1)
+      return i;
+  }
+  return 0;
 }
